@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MqttLibNet.Services
 {
-    public class MqttHandshakeService : IObserver<byte[]>
+    public class MqttHandshakeService : IObserver<(byte[] Data, byte Flag)>
     {
         private readonly MqttStreamReaderWriter mqttStreamReaderWriter;
         private readonly SemaphoreSlim semaphoreSlim;
@@ -38,10 +38,10 @@ namespace MqttLibNet.Services
             throw new NotImplementedException();
         }
 
-        public void OnNext(byte[] connackPacket)
+        public void OnNext((byte[] Data, byte Flag) connackPacket)
         {
             Connack connack = new Connack();
-            connackData = connack.Deserialize(connackPacket);
+            connackData = connack.Deserialize(connackPacket.Data);
             semaphoreSlim.Release();
         }
     }

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace MqttLibNet.Services
 {
-    public class MqttMetronomeService : IObserver<byte[]>
+    public class MqttMetronomeService : IObserver<(byte[] Data, byte Flag)>
     {
         private readonly int timeMs;
         private readonly MqttStreamReaderWriter mqttStreamReaderWriter;
@@ -27,7 +27,7 @@ namespace MqttLibNet.Services
             throw new NotImplementedException();
         }
 
-        public void OnNext(byte[] pingResp)
+        public void OnNext((byte[] Data, byte Flag) pingResp)
         {
             Console.WriteLine($"Ping response message - {DateTime.UtcNow} - Total ping messages so far {++count}");
         }

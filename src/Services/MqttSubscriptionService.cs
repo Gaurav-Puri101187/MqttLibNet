@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MqttLibNet.Services
 {
-    public class MqttSubscriptionService : IObserver<byte[]>
+    public class MqttSubscriptionService : IObserver<(byte[] Data, byte Flag)>
     {
         private readonly MqttStreamReaderWriter mqttStreamReaderWriter;
         private readonly SemaphoreSlim subscribeLock;
@@ -27,10 +27,10 @@ namespace MqttLibNet.Services
             throw new NotImplementedException();
         }
 
-        public void OnNext(byte[] value)
+        public void OnNext((byte[] Data, byte Flag) subAckPacket)
         {
             SubAck subAck = new SubAck();
-            subAckData = subAck.Deserialize(value);
+            subAckData = subAck.Deserialize(subAckPacket.Data);
             subscribeLock.Release();
         }
 

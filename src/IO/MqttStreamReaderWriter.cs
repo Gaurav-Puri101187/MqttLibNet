@@ -9,12 +9,12 @@ namespace MqttLibNet.IO
     public class MqttStreamReaderWriter
     {
         private readonly IMqttStream mqttStream;
-        private ConcurrentDictionary<IObserver<byte[]>, Func<(MqttControlPacketType packetType, byte flag), bool>> handlers;
+        private ConcurrentDictionary<IObserver<(byte[] Data, byte Flag)>, Func<(MqttControlPacketType packetType, byte flag), bool>> handlers;
 
         public MqttStreamReaderWriter(IMqttStream mqttStream)
         {
             this.mqttStream = mqttStream;
-            this.handlers = new ConcurrentDictionary<IObserver<byte[]>, Func<(MqttControlPacketType packetType, byte flag), bool>>();
+            this.handlers = new ConcurrentDictionary<IObserver<(byte[] Data, byte Flag)>, Func<(MqttControlPacketType packetType, byte flag), bool>>();
         }
 
         public void Read()
@@ -35,7 +35,7 @@ namespace MqttLibNet.IO
                                 var item = await mqttStream.ReadAsync(variableLength);
                                 foreach (var handler in matchingHandlers)
                                 {
-                                    handler.Key.OnNext(item);
+                                    handler.Key.OnNext((item, controlPacketType.Flag));
                                 }
                             }
                             catch
@@ -50,7 +50,7 @@ namespace MqttLibNet.IO
                         {
                             foreach (var handler in matchingHandlers)
                             {
-                                handler.Key.OnNext(null);
+                                handler.Key.OnNext((null, controlPacketType.Flag));
                             }
                         }
                     }
@@ -68,7 +68,7 @@ namespace MqttLibNet.IO
         }
 
         public bool Subscribe(
-            IObserver<byte[]> packetHandler,
+            IObserver<(byte[] Data, byte Flag)> packetHandler,
             Func<(MqttControlPacketType packetType, byte flag), bool> predicate)
         {
             return handlers.TryAdd(packetHandler, predicate);
