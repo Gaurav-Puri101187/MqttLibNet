@@ -67,7 +67,6 @@ namespace MqttLibNet.Packets
         }
 
         private byte GetFlag(ConnectData connectData)
-
         {
             byte flag = 0b_00000000;
             // connect flag byte is part of connect variable headers

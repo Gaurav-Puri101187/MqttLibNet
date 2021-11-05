@@ -15,7 +15,7 @@ namespace MqttLibNet.Utils
         /// <returns></returns>
         public static bool IsBitOn(this byte b, int bitPosition)
         {
-            var operand = (byte)Math.Pow(bitPosition, 2);
+            var operand = (byte)Math.Pow(2, bitPosition);
             return (b & operand) == operand;
         }
 

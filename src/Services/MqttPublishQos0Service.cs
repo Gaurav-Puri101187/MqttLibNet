@@ -28,7 +28,7 @@ namespace MqttLibNet.Services
         {
             PublishQos0 publishQos0 = new PublishQos0();
             var data = publishQos0.Deserialize(qos0.Data);
-            Console.WriteLine($"Topic -{data.TopicName} Qos -{data.QosLevel} Message -{data.Message}");
+            Console.WriteLine($"Topic -{data.TopicName} Qos -{QosLevel.Qos0} Message -{data.Message}");
         }
 
         public void Start()

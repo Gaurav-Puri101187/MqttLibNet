@@ -9,6 +9,7 @@
         Connect=0b_00010000,
         Connack=0b_00100000,
         Publish=0b_00110000,
+        PubAck=0b_01000000,
         Subscribe=0b_10000000,
         SubAck=0b_10010000,
         PingReq=0b_11000000,
