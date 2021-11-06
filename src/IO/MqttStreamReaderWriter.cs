@@ -100,7 +100,7 @@ namespace MqttLibNet.IO
                 if (value < 128)
                 {
                     continueRead = false;
-                    length += value;
+                    length += (value * multiplier);
                 }
                 else
                 {
