@@ -1,6 +1,8 @@
 using System;
 using MqttLibNet.IO;
 using MqttLibNet.Packets;
+using MqttLibNet.Packets.Data;
+using MqttLibNet.Packets.Handlers;
 using MqttLibNet.Utils;
 
 namespace MqttLibNet.Services

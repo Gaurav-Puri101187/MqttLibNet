@@ -1,44 +1,19 @@
-﻿using MqttLibNet.Utils;
+﻿using MqttLibNet.Packets.Data;
+using MqttLibNet.Utils;
 using System.Collections.Generic;
 
-namespace MqttLibNet.Packets
+namespace MqttLibNet.Packets.Handlers
 {
-    public class Connect : IMqttBaseControlPacket<ConnectData>
+    public class Connect : BasePacketHandler<ConnectData>
     {
-        public MqttControlPacketType ControlPacketType => MqttControlPacketType.Connect;
 
-        /// <summary>
-        /// This is supposed to be implemented on server side
-        /// As client would bever receive the Connect packet.
-        /// </summary>
-        /// <param name="packetBytes"></param>
-        /// <returns></returns>
-        public ConnectData Deserialize(byte[] packetBytes)
+        public Connect()
+               : base(MqttControlPacketType.Connect)
         {
-            throw new System.NotImplementedException();
         }
 
-        /// <summary>
-        /// This is supposed to be implemented on client side
-        /// As server would never send a connect packet.
-        /// </summary>
-        /// <param name="connectData"></param>
-        /// <returns></returns>
-        public byte[] Serialize(ConnectData connectData)
+        protected override byte[] GetPayload(ConnectData connectData)
         {
-            List<byte> connectPacketBytes = new List<byte>();
-
-            // Step 1 create packet type header byte.
-            connectPacketBytes.Add((byte)ControlPacketType);
-
-            // Step 2 create variable headers
-            List<byte> variableHeaders = new List<byte>();
-            variableHeaders.AddRange(connectData.ProtocolName.GetMqttUTF8EncodedString());
-            variableHeaders.Add((byte)connectData.ProtocolLevel);
-            variableHeaders.Add(GetFlag(connectData));
-            variableHeaders.AddRange(((short)(((connectData.KeepAliveMs)/1000))).GetMqttBigEndianInt16());
-
-            // Step 3 create payload
             List<byte> payload = new List<byte>();
             payload.AddRange(connectData.ClientIdentifier.GetMqttUTF8EncodedString());
             if (!string.IsNullOrEmpty(connectData.WillTopic))
@@ -57,13 +32,17 @@ namespace MqttLibNet.Packets
             {
                 payload.AddRange(connectData.Password.GetMqttUTF8EncodedString());
             }
+            return payload.ToArray();
+        }
 
-            // Step 4 Make a variable Add the variable headers and payload in the packet.
-            var headerLength = variableHeaders.Count + payload.Count;
-            connectPacketBytes.AddRange(headerLength.GetMqttRemainingLength());
-            connectPacketBytes.AddRange(variableHeaders);
-            connectPacketBytes.AddRange(payload);
-            return connectPacketBytes.ToArray();
+        protected override byte[] GetVariableHeaders(ConnectData connectData)
+        {
+            List<byte> variableHeaders = new List<byte>();
+            variableHeaders.AddRange(connectData.ProtocolName.GetMqttUTF8EncodedString());
+            variableHeaders.Add((byte)connectData.ProtocolLevel);
+            variableHeaders.Add(GetFlag(connectData));
+            variableHeaders.AddRange(((short)(((connectData.KeepAliveMs) / 1000))).GetMqttBigEndianInt16());
+            return variableHeaders.ToArray();
         }
 
         private byte GetFlag(ConnectData connectData)

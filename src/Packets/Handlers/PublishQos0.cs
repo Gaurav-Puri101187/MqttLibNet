@@ -1,8 +1,9 @@
-﻿using MqttLibNet.Utils;
+﻿using MqttLibNet.Packets.Data;
+using MqttLibNet.Utils;
 using System.Linq;
 using System.Text;
 
-namespace MqttLibNet.Packets
+namespace MqttLibNet.Packets.Handlers
 {
     public class PublishQos0 : Publish
     {

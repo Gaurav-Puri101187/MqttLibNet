@@ -1,13 +1,17 @@
-﻿using MqttLibNet.Utils;
+﻿using MqttLibNet.Packets.Data;
+using MqttLibNet.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace MqttLibNet.Packets
+namespace MqttLibNet.Packets.Handlers
 {
-    public class SubAck : IMqttBaseControlPacket<SubAckData>
+    public class SubAck : BasePacketHandler<SubAckData>
     {
-        public MqttControlPacketType ControlPacketType => MqttControlPacketType.SubAck;
+        public SubAck()
+               : base(MqttControlPacketType.SubAck)
+        {
+        }
 
         /// <summary>
         /// This should be implemented on client side
@@ -15,7 +19,7 @@ namespace MqttLibNet.Packets
         /// </summary>
         /// <param name="packetBytes"></param>
         /// <returns></returns>
-        public SubAckData Deserialize(byte[] packetBytes)
+        public override SubAckData Deserialize(byte[] packetBytes)
         {
             SubAckData subAckData = new SubAckData();
             subAckData.PacketIdentifier = packetBytes.Take(2).ToArray().GetMqttInt16();
@@ -26,17 +30,6 @@ namespace MqttLibNet.Packets
             }
             subAckData.SubAckReturnCode = returnCodes;
             return subAckData;
-        }
-
-        /// <summary>
-        /// This should be implemented on server side 
-        /// where server would create the sub ack packet
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        public byte[] Serialize(SubAckData data)
-        {
-            throw new NotImplementedException();
         }
     }
 }

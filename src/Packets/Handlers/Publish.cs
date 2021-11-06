@@ -1,7 +1,8 @@
-﻿using MqttLibNet.Utils;
+﻿using MqttLibNet.Packets.Data;
+using MqttLibNet.Utils;
 using System.Collections.Generic;
 
-namespace MqttLibNet.Packets
+namespace MqttLibNet.Packets.Handlers
 {
     public abstract class Publish : IMqttBaseControlPacket<PublishData>
     {

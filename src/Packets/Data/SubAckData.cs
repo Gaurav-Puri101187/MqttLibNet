@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace MqttLibNet.Packets
+namespace MqttLibNet.Packets.Data
 {
     public class SubAckData
     {
