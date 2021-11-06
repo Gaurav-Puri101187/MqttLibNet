@@ -23,19 +23,16 @@ namespace MqttLibNet.Utils
         public static byte[] GetMqttRemainingLength(this int value)
         {
             List<byte> remainingLengthByte = new List<byte>();
-            if(value == 0)
+            do
             {
-                remainingLengthByte.Add((byte)(value));
-            }
-            while(value % 128 != 0)
-            {
-                remainingLengthByte.Add((byte)(value % 128));
-                value = value - (value % 128);
-            }
-            if(value > 0)
-            {
-                remainingLengthByte.Add((byte)(value / 128));
-            }
+                var rem = value % 128;
+                if(value >= 128)
+                {
+                    rem = rem + 128;
+                }
+                remainingLengthByte.Add((byte)rem);
+                value = value / 128;
+            } while (value > 0);
             return remainingLengthByte.ToArray();
         }
     }

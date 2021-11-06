@@ -104,7 +104,7 @@ namespace MqttLibNet.IO
                 }
                 else
                 {
-                    length += (128 - value) * multiplier;
+                    length += (value - 128) * multiplier;
                 }
                 multiplier *= 128;
             }
