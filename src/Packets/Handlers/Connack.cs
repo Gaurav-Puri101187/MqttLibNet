@@ -1,17 +1,20 @@
-﻿using System;
+﻿using MqttLibNet.Packets.Data;
+using System;
 
-namespace MqttLibNet.Packets
+namespace MqttLibNet.Packets.Handlers
 {
-    public class Connack : IMqttBaseControlPacket<ConnackData>
+    public class Connack : BasePacketHandler<ConnackData>
     {
-        public MqttControlPacketType ControlPacketType => MqttControlPacketType.Connack;
-
+        public Connack()
+               : base(MqttControlPacketType.Connack)
+        {
+        }
         /// <summary>
         /// A client would always deserialize a connack
         /// </summary>
         /// <param name="packetBytes"></param>
         /// <returns></returns>
-        public ConnackData Deserialize(byte[] packetBytes)
+        public override ConnackData Deserialize(byte[] packetBytes)
         {
             ConnackData connackData = new ConnackData();
             // first byte would tell us wether we have session flag on or not.
@@ -19,16 +22,6 @@ namespace MqttLibNet.Packets
             // second byte would tell us the return code.
             connackData.ConnectReturnCode = (ConnectReturnCode)packetBytes[1];
             return connackData;
-        }
-
-        /// <summary>
-        /// A server will always prepare/serialize the connack message.
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        public byte[] Serialize(ConnackData data)
-        {
-            throw new NotImplementedException();
         }
     }
 }

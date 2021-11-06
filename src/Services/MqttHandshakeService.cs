@@ -1,5 +1,7 @@
 ﻿using MqttLibNet.IO;
 using MqttLibNet.Packets;
+using MqttLibNet.Packets.Data;
+using MqttLibNet.Packets.Handlers;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

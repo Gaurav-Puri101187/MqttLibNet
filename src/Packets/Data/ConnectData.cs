@@ -1,4 +1,4 @@
-﻿namespace MqttLibNet.Packets
+﻿namespace MqttLibNet.Packets.Data
 {
     public class ConnectData
     {
