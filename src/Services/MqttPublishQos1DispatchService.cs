@@ -3,6 +3,7 @@ using MqttLibNet.Packets;
 using MqttLibNet.Packets.Data;
 using MqttLibNet.Packets.Handlers;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,7 +13,7 @@ namespace MqttLibNet.Services
     {
         private readonly MqttStreamReaderWriter mqttStreamReaderWriter;
         private SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
-
+        private SemaphoreSlim _lock = new SemaphoreSlim(1,1);
         public MqttPublishQos1DispatchService(MqttStreamReaderWriter mqttStreamReaderWriter)
         {
             this.mqttStreamReaderWriter = mqttStreamReaderWriter;
@@ -39,9 +40,20 @@ namespace MqttLibNet.Services
             Console.WriteLine($"Ack for packet {data.PacketIdentifier}");
         }
 
-        public async Task PushAsync(PublishData publishData)
+        public async Task PublishAsync(PublishData publishData)
         {
-            await semaphoreSlim.WaitAsync();
+            await _lock.WaitAsync();
+            await PublishInternal(publishData);
+            while (!await semaphoreSlim.WaitAsync(10000))
+            {
+                publishData.Duplicate = true;
+                await PublishInternal(publishData);
+            }
+            _lock.Release();
+        }
+
+        private async Task PublishInternal(PublishData publishData)
+        {
             PublishQos1 publishQos1 = new PublishQos1();
             publishData.QosLevel = QosLevel.Qos1;
             publishData.PacketIdentifier = 1;

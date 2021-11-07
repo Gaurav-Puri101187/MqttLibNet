@@ -81,7 +81,7 @@ namespace MqttLibNet.Client
             publishData.Message = message;
             publishData.TopicName = topicName;
             publishData.QosLevel = QosLevel.Qos1;
-            await mqttPublishQos1DispatchService.PushAsync(publishData);
+            await mqttPublishQos1DispatchService.PublishAsync(publishData);
         }
     }
 }
