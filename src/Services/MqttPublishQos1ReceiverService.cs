@@ -42,7 +42,7 @@ namespace MqttLibNet.Services
         {
             mqttStreamReaderWriter.Subscribe(
                 this, 
-                _ => _.packetType == Packets.MqttControlPacketType.Publish &&
+                _ => _.packetType == MqttControlPacketType.Publish &&
                  _.flag.IsBitOn(1) &&
                  !_.flag.IsBitOn(2));
         }

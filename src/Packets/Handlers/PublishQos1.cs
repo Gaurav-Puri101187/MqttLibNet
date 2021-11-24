@@ -9,7 +9,7 @@ namespace MqttLibNet.Packets.Handlers
     {
         public override PublishData Deserialize(byte[] packetBytes)
         {
-             PublishData publishData = new PublishData();
+            PublishData publishData = new PublishData();
             var topicNameLength = packetBytes.Take(2).ToArray().GetMqttInt16();
             var topicNameBuffer = packetBytes.ToList().GetRange(2, topicNameLength).ToArray();
             publishData.TopicName = Encoding.UTF8.GetString(topicNameBuffer);

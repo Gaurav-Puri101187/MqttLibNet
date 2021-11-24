@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace MqttLibNet.Services
 {
-    public class MqttPublishQos0Service : IObserver<(byte[] Data, byte Flag)>
+    public class MqttQos0Service : IObserver<(byte[] Data, byte Flag)>
     {
         private readonly MqttStreamReaderWriter mqttStreamReaderWriter;
 
-        public MqttPublishQos0Service(MqttStreamReaderWriter mqttStreamReaderWriter)
+        public MqttQos0Service(MqttStreamReaderWriter mqttStreamReaderWriter)
         {
             this.mqttStreamReaderWriter = mqttStreamReaderWriter;
         }
@@ -41,7 +41,7 @@ namespace MqttLibNet.Services
             !_.flag.IsBitOn(2));
         }
 
-        public async Task PushAsync(PublishData publishData)
+        public async Task PublishAsync(PublishData publishData)
         {
             Publish publish = new PublishQos0();
             var pubData = publish.Serialize(publishData);

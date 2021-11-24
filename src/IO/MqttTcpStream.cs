@@ -38,15 +38,18 @@ namespace MqttLibNet.IO
             await semaphoreSlimReader.WaitAsync();
             byte[] buffer = new byte[noOfBytes];
             var bytesRead = await tcpClientInternal.Value.GetStream().ReadAsync(buffer, 0, noOfBytes);
+            if(bytesRead == 0)
+            {
+                throw new Exception("Read Timed Out!!!");
+            }
             semaphoreSlimReader.Release();
             return buffer;
         }
 
         public async Task<byte> ReadByteAsync()
         {
-            byte byteToReturn = 0b_00000000;
             var item = await ReadAsync(1);
-            byteToReturn = item[0];
+            byte byteToReturn = item[0];
             return byteToReturn;
         }
 

@@ -2,7 +2,6 @@
 using MqttLibNet.Packets;
 using MqttLibNet.Packets.Data;
 using MqttLibNet.Services;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,77 +10,117 @@ namespace MqttLibNet.Client
 {
     public class MqttClient
     {
-        MqttStreamReaderWriter mqttStreamReaderWriter;
-        IMqttStream mqttStream;
-        MqttPublishQos0Service mqttPublishQos0Service;
-        MqttPublishQos1ReceiverService mqttPublishQos1Service;
-        MqttPublishQos1DispatchService mqttPublishQos1DispatchService;
-        public async Task Handshake()
+        private const short SubscribePacketIdentifier = 10;
+        private readonly MqttStreamReaderWriter mqttStreamReaderWriter;
+        private readonly MqttHandshakeService mqttHandshakeService;
+        private readonly MqttQos0Service mqttPublishQos0Service;
+        private readonly MqttPublishQos1ReceiverService mqttPublishQos1Service;
+        private readonly MqttPublishQos1DispatchService mqttPublishQos1DispatchService;
+        private readonly MqttSubscriptionService mqttSubscriptionService;
+        private MqttClientConfiguration connectionContext = new MqttClientConfiguration();
+
+        /// <summary>
+        /// CTOR.
+        /// </summary>
+        /// <param name="mqttStream"></param>
+        /// <param name="mqttStreamReaderWriter"></param>
+        /// <param name="mqttPublishQos0Service"></param>
+        /// <param name="mqttPublishQos1Service"></param>
+        /// <param name="mqttPublishQos1DispatchService"></param>
+        public MqttClient(
+            IMqttStream mqttStream,
+            MqttStreamReaderWriter mqttStreamReaderWriter,
+            MqttHandshakeService mqttHandshakeService,
+            MqttQos0Service mqttPublishQos0Service,
+            MqttPublishQos1ReceiverService mqttPublishQos1Service,
+            MqttPublishQos1DispatchService mqttPublishQos1DispatchService,
+            MqttSubscriptionService mqttSubscriptionService)
         {
-            mqttStream = new MqttTcpStream();
-            mqttStreamReaderWriter = new MqttStreamReaderWriter(mqttStream);
-            ConnectData connectData = new ConnectData();
-            connectData.CleanSession = true;
-            connectData.ClientIdentifier = "TestClient";
-            connectData.ProtocolName = "MQTT";
-            connectData.ProtocolLevel = 4;
-            connectData.KeepAliveMs = 30000;
-            MqttHandshakeService mqttHandshakeService = new MqttHandshakeService(mqttStreamReaderWriter);
-            mqttStreamReaderWriter.Read();
-            var connack = await mqttHandshakeService.StartAsync(connectData);
-            if(connack.ConnectReturnCode == ConnectReturnCode.ConnectionAccepted)
-            {
-                Console.WriteLine($"Conn done code {connack.ConnectReturnCode} session {connack.SessionPresent}");
-                MqttMetronomeService mqttMetronomeService = new MqttMetronomeService(mqttStreamReaderWriter);
-                mqttMetronomeService.Start();
-                mqttPublishQos0Service = new MqttPublishQos0Service(mqttStreamReaderWriter);
-                mqttPublishQos0Service.Start();
-                mqttPublishQos1Service = new MqttPublishQos1ReceiverService(mqttStreamReaderWriter);
-                mqttPublishQos1Service.Start();
-                mqttPublishQos1DispatchService = new MqttPublishQos1DispatchService(mqttStreamReaderWriter);
-                mqttPublishQos1DispatchService.Start();
-            }
+            this.mqttStreamReaderWriter = mqttStreamReaderWriter;
+            this.mqttHandshakeService = mqttHandshakeService;
+            this.mqttPublishQos0Service = mqttPublishQos0Service;
+            this.mqttPublishQos1Service = mqttPublishQos1Service;
+            this.mqttPublishQos1DispatchService = mqttPublishQos1DispatchService;
+            this.mqttSubscriptionService = mqttSubscriptionService;
         }
 
-        public async Task Subscribe()
+        /// <summary>
+        /// This connect method holds the orchestration logic to connect to the broker.
+        /// </summary>
+        /// <param name="mqttClientConfiguration"></param>
+        /// <returns></returns>
+        public async Task<MqttConnectResult> ConnectAsync(MqttClientConfiguration mqttClientConfiguration)
         {
-            SubscribeData subscribeData = new SubscribeData();
-            subscribeData.PacketIdentifier = 10;
-            subscribeData.Subscriptions = new List<(string TopicName, QosLevel Qos)>{("GPTKM", QosLevel.Qos0), ("GPTKM1", QosLevel.Qos1)};
-            MqttSubscriptionService mqttSubscriptionService = new MqttSubscriptionService(mqttStreamReaderWriter);
-            var subAckData = await mqttSubscriptionService.StartAsync(subscribeData);
-            if(subAckData.PacketIdentifier == 10)
+            var connackData = await Handshake(mqttClientConfiguration);
+            var subscriptionResponse = await Subscribe(mqttClientConfiguration.TopicConfiguration);
+            MqttConnectResult mqttConnectResult = new MqttConnectResult();
+            if (mqttConnectResult.ConnectReturnCode == ConnectReturnCode.ConnectionAccepted)
             {
-                for(int i = 0; i <= subscribeData.Subscriptions.Count() - 1; ++i)
-                {
-                    var topicName = subscribeData.Subscriptions.ElementAt(i).TopicName;
-                    var qosClient = subscribeData.Subscriptions.ElementAt(i).Qos;
-                    var qosServer = subAckData.SubAckReturnCode.ElementAt(i);
-                    Console.WriteLine($"TopicName- {topicName} qosClient {qosClient} qosServer {qosServer}");
-                }
+                connectionContext = mqttClientConfiguration;
+                connectionContext.CleanSession = connackData.SessionPresent;
+                connectionContext.TopicConfiguration = subscriptionResponse;
+            }
+            mqttConnectResult.ConnectReturnCode = connackData.ConnectReturnCode;
+            mqttConnectResult.SessionPresent = connackData.SessionPresent;
+            mqttConnectResult.TopicConfiguration = subscriptionResponse;
+            return mqttConnectResult;
+        }
+
+        /// <summary>
+        /// Simply publish the data on the topic with given qos level.
+        /// </summary>
+        /// <param name="topicName"></param>
+        /// <param name="message"></param>
+        /// <param name="qosLevel"></param>
+        /// <returns></returns>
+        public async Task Publish(string topicName, string message, QosLevel qosLevel)
+        {
+            PublishData publishData = new PublishData();
+            publishData.Message = message;
+            publishData.TopicName = topicName;
+            publishData.QosLevel = qosLevel;
+            if (qosLevel == QosLevel.Qos0)
+            {
+                await mqttPublishQos0Service.PublishAsync(publishData);
             }
             else
             {
-                Console.WriteLine($"Sub failed received identifier is {subAckData.PacketIdentifier} passed is 10");
+                await mqttPublishQos1DispatchService.PublishAsync(publishData);
             }
         }
+       
 
-        public async Task Publish(string topicName, string message)
+        private async Task<ConnackData> Handshake(MqttClientConfiguration mqttClientConfiguration)
         {
-            PublishData publishData = new PublishData();
-            publishData.Message = message;
-            publishData.TopicName = topicName;
-            publishData.QosLevel = QosLevel.Qos0;
-            await mqttPublishQos0Service.PushAsync(publishData);
+            ConnectData connectData = new ConnectData(mqttClientConfiguration);
+            mqttStreamReaderWriter.Read();
+            var connack = await mqttHandshakeService.StartAsync(connectData);
+            if (connack.ConnectReturnCode == ConnectReturnCode.ConnectionAccepted)
+            {
+                MqttMetronomeService mqttMetronomeService = new MqttMetronomeService(mqttStreamReaderWriter);
+                mqttMetronomeService.Start();
+                mqttPublishQos0Service.Start();
+                mqttPublishQos1Service.Start();
+                mqttPublishQos1DispatchService.Start();
+            }
+            return connack;
         }
 
-        public async Task PublishQos1(string topicName, string message)
+        private async Task<IEnumerable<MqttTopicConfiguration>> Subscribe(IEnumerable<MqttTopicConfiguration> topicConfiguration)
         {
-            PublishData publishData = new PublishData();
-            publishData.Message = message;
-            publishData.TopicName = topicName;
-            publishData.QosLevel = QosLevel.Qos1;
-            await mqttPublishQos1DispatchService.PublishAsync(publishData);
+            SubscribeData subscribeData = new SubscribeData(topicConfiguration, SubscribePacketIdentifier);
+            List<MqttTopicConfiguration> subscribedTopics = new List<MqttTopicConfiguration>();
+            var subAckData = await mqttSubscriptionService.StartAsync(subscribeData);
+            if (subAckData.PacketIdentifier == SubscribePacketIdentifier)
+            {
+                for (int i = 0; i <= subscribeData.Subscriptions.Count() - 1; ++i)
+                {
+                    var topicName = subscribeData.Subscriptions.ElementAt(i).TopicName;
+                    var qos = subAckData.SubAckReturnCode.ElementAt(i);
+                    subscribedTopics.Add(new MqttTopicConfiguration(topicName, (QosLevel)qos));
+                }
+            }
+            return subscribedTopics;
         }
     }
 }

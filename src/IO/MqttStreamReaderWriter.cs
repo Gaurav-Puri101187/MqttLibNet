@@ -54,9 +54,13 @@ namespace MqttLibNet.IO
                             }
                         }
                     }
-                    catch (Exception ex)
+                    catch (Exception err)
                     {
-                        Console.WriteLine(ex);
+                        Console.WriteLine(err);
+                        foreach (var handler in handlers)
+                        {
+                            handler.Key.OnError(err);
+                        }
                     }
                 }
             });
@@ -64,7 +68,20 @@ namespace MqttLibNet.IO
 
         public async Task WriteAsync(byte[] buffer)
         {
-            await mqttStream.WriteAsync(buffer);
+            try
+            {
+                await mqttStream.WriteAsync(buffer);
+            }
+
+            catch (Exception err)
+            {
+                Console.WriteLine(err);
+                foreach (var handler in handlers)
+                {
+                    handler.Key.OnError(err);
+                }
+            }
+            
         }
 
         public bool Subscribe(
@@ -72,6 +89,11 @@ namespace MqttLibNet.IO
             Func<(MqttControlPacketType packetType, byte flag), bool> predicate)
         {
             return handlers.TryAdd(packetHandler, predicate);
+        }
+
+        public void Reset()
+        {
+            mqttStream.Reset();
         }
 
         private async Task<(MqttControlPacketType PacketType, byte Flag)> FindControlPacketTypeAsync()
