@@ -17,6 +17,7 @@ namespace MqttLibNet.Client
         private readonly MqttPublishQos1ReceiverService mqttPublishQos1Service;
         private readonly MqttPublishQos1DispatchService mqttPublishQos1DispatchService;
         private readonly MqttSubscriptionService mqttSubscriptionService;
+        private readonly MqttMetronomeService mqttMetronomeService;
         private MqttClientConfiguration connectionContext = new MqttClientConfiguration();
 
         /// <summary>
@@ -34,7 +35,8 @@ namespace MqttLibNet.Client
             MqttQos0Service mqttPublishQos0Service,
             MqttPublishQos1ReceiverService mqttPublishQos1Service,
             MqttPublishQos1DispatchService mqttPublishQos1DispatchService,
-            MqttSubscriptionService mqttSubscriptionService)
+            MqttSubscriptionService mqttSubscriptionService,
+            MqttMetronomeService mqttMetronomeService)
         {
             this.mqttStreamReaderWriter = mqttStreamReaderWriter;
             this.mqttHandshakeService = mqttHandshakeService;
@@ -42,6 +44,7 @@ namespace MqttLibNet.Client
             this.mqttPublishQos1Service = mqttPublishQos1Service;
             this.mqttPublishQos1DispatchService = mqttPublishQos1DispatchService;
             this.mqttSubscriptionService = mqttSubscriptionService;
+            this.mqttMetronomeService = mqttMetronomeService;
         }
 
         /// <summary>
@@ -52,17 +55,17 @@ namespace MqttLibNet.Client
         public async Task<MqttConnectResult> ConnectAsync(MqttClientConfiguration mqttClientConfiguration)
         {
             var connackData = await Handshake(mqttClientConfiguration);
-            var subscriptionResponse = await Subscribe(mqttClientConfiguration.TopicConfiguration);
             MqttConnectResult mqttConnectResult = new MqttConnectResult();
-            if (mqttConnectResult.ConnectReturnCode == ConnectReturnCode.ConnectionAccepted)
+            if (connackData.ConnectReturnCode == ConnectReturnCode.ConnectionAccepted)
             {
+                var subscriptionResponse = await Subscribe(mqttClientConfiguration.TopicConfiguration);
+                mqttConnectResult.TopicConfiguration = subscriptionResponse;
                 connectionContext = mqttClientConfiguration;
                 connectionContext.CleanSession = connackData.SessionPresent;
                 connectionContext.TopicConfiguration = subscriptionResponse;
             }
             mqttConnectResult.ConnectReturnCode = connackData.ConnectReturnCode;
             mqttConnectResult.SessionPresent = connackData.SessionPresent;
-            mqttConnectResult.TopicConfiguration = subscriptionResponse;
             return mqttConnectResult;
         }
 
@@ -97,7 +100,6 @@ namespace MqttLibNet.Client
             var connack = await mqttHandshakeService.StartAsync(connectData);
             if (connack.ConnectReturnCode == ConnectReturnCode.ConnectionAccepted)
             {
-                MqttMetronomeService mqttMetronomeService = new MqttMetronomeService(mqttStreamReaderWriter);
                 mqttMetronomeService.Start();
                 mqttPublishQos0Service.Start();
                 mqttPublishQos1Service.Start();

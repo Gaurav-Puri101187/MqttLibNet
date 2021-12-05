@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,18 +12,39 @@ namespace MqttLibNet.IO
         private readonly SemaphoreSlim semaphoreSlimWriter;
         // Slim lock for Reader.
         private readonly SemaphoreSlim semaphoreSlimReader;
+        private readonly string broker;
+        private readonly int port;
+        private readonly bool sslEnabled;
+        private readonly int readWriteTimeoutMs;
+
         // Tcp stream.
         private Lazy<TcpClient> tcpClientInternal;
-        // Timeout for readandwrite.
-        private const int ReadWriteTimeout = 60000;
-        public MqttTcpStream()
+        // SSL stream.
+        private Lazy<SslStream> sslStream;
+
+        public MqttTcpStream(string broker, int port, bool sslEnabled, int readWriteTimeoutMs)
         {
             semaphoreSlimWriter = new SemaphoreSlim(1, 1);
             semaphoreSlimReader = new SemaphoreSlim(1, 1);
+            this.broker = broker;
+            this.port = port;
+            this.sslEnabled = sslEnabled;
+            this.readWriteTimeoutMs = readWriteTimeoutMs;
+            InitClient();
+        }
+
+        private void InitClient()
+        {
             tcpClientInternal = new Lazy<TcpClient>(() =>
             {
-                return new TcpClient("broker.hivemq.com", 1883) { ReceiveTimeout = ReadWriteTimeout, SendTimeout = ReadWriteTimeout };
-            });
+                return new TcpClient(broker, port) { ReceiveTimeout = readWriteTimeoutMs, SendTimeout = readWriteTimeoutMs };
+            }, true);
+            sslStream = new Lazy<SslStream>(() =>
+            {
+                var ssl = new SslStream(tcpClientInternal.Value.GetStream(), false);
+                ssl.AuthenticateAsClient(broker);
+                return ssl;
+            }, true);
         }
 
         /// <summary>
@@ -37,7 +58,8 @@ namespace MqttLibNet.IO
         {
             await semaphoreSlimReader.WaitAsync();
             byte[] buffer = new byte[noOfBytes];
-            var bytesRead = await tcpClientInternal.Value.GetStream().ReadAsync(buffer, 0, noOfBytes);
+            var bytesRead = sslEnabled ? await sslStream.Value.ReadAsync(buffer, 0, noOfBytes)
+                                       : await tcpClientInternal.Value.GetStream().ReadAsync(buffer, 0, noOfBytes);
             if(bytesRead == 0)
             {
                 throw new Exception("Read Timed Out!!!");
@@ -61,10 +83,7 @@ namespace MqttLibNet.IO
         {
             tcpClientInternal.Value.Close();
             tcpClientInternal.Value.Dispose();
-            tcpClientInternal = new Lazy<TcpClient>(() =>
-            {
-                return new TcpClient("broker.hivemq.com", 1883);
-            });
+            InitClient();
         }
 
         /// <summary>
@@ -77,7 +96,14 @@ namespace MqttLibNet.IO
         public async Task WriteAsync(byte[] buffer)
         {
             await semaphoreSlimWriter.WaitAsync();
-            await tcpClientInternal.Value.GetStream().WriteAsync(buffer);
+            if (sslEnabled) 
+            {
+                await sslStream.Value.WriteAsync(buffer);
+            }
+            else
+            {
+                await tcpClientInternal.Value.GetStream().WriteAsync(buffer);
+            }
             semaphoreSlimWriter.Release();
         }
     }

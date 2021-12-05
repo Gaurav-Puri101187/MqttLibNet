@@ -10,9 +10,15 @@ namespace MqttLibNet.Client
     /// </summary>
     public static class ServiceCollectionExtension
     {
-        public static IServiceCollection AddMqttClientWithTcp(this IServiceCollection serviceCollection)
+        public static IServiceCollection AddMqttClientWithTcp(
+            this IServiceCollection serviceCollection, 
+            MqttBrokerConfiguration mqttBrokerConfiguration)
         {
-            serviceCollection.AddSingleton<IMqttStream>(new MqttTcpStream());
+            serviceCollection.AddSingleton<IMqttStream>(new MqttTcpStream(
+                mqttBrokerConfiguration.Broker,
+                mqttBrokerConfiguration.Port,
+                mqttBrokerConfiguration.SSLEnabled,
+                mqttBrokerConfiguration.ReadWriteTimeoutMs));
             serviceCollection.AddSingleton<MqttStreamReaderWriter>();
             serviceCollection.AddSingleton<MqttHandshakeService>();
             serviceCollection.AddSingleton<MqttPublishQos1DispatchService>();
