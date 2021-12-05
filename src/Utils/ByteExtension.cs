@@ -29,7 +29,11 @@ namespace MqttLibNet.Utils
         public static int GetMqttInt16(this byte[] bytes)
         {
             Array.Reverse(bytes);
+#if NETSTANDARD2_0
+            return BitConverter.ToInt16(bytes,1);
+#else
             return BitConverter.ToInt16(bytes);
+#endif
         }
     }
 }
