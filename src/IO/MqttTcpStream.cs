@@ -98,18 +98,18 @@ namespace MqttLibNet.IO
             await semaphoreSlimWriter.WaitAsync();
             if (sslEnabled) 
             {
-#if NETSTANDARD2_0
-                await sslStream.Value.WriteAsync(buffer,0,buffer.Length);
-#else
+#if  (NET5_0 || NETSTANDARD2_1)
                 await sslStream.Value.WriteAsync(buffer);
+#else
+                await sslStream.Value.WriteAsync(buffer,0,buffer.Length);
 #endif
             }
             else
             {
-#if NETSTANDARD2_0
-                await tcpClientInternal.Value.GetStream().WriteAsync(buffer,0,buffer.Length);
-#else
+#if  (NET5_0 || NETSTANDARD2_1)
                 await tcpClientInternal.Value.GetStream().WriteAsync(buffer);
+#else
+                await tcpClientInternal.Value.GetStream().WriteAsync(buffer,0,buffer.Length);
 #endif
             }
             semaphoreSlimWriter.Release();
