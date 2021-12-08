@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using MqttLibNet.IO;
 using MqttLibNet.Services;
+using MqttLibNet.Utils;
 using System;
 
 namespace MqttLibNet.Client
@@ -19,6 +20,7 @@ namespace MqttLibNet.Client
                 mqttBrokerConfiguration.Port,
                 mqttBrokerConfiguration.SSLEnabled,
                 mqttBrokerConfiguration.ReadWriteTimeoutMs));
+            serviceCollection.AddSingleton(typeof(MqttLibNetLogger<>));
             serviceCollection.AddSingleton<MqttStreamReaderWriter>();
             serviceCollection.AddSingleton<MqttHandshakeService>();
             serviceCollection.AddSingleton<MqttPublishQos1DispatchService>();

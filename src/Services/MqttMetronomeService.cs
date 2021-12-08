@@ -1,6 +1,7 @@
 ﻿using MqttLibNet.IO;
 using MqttLibNet.Packets;
 using MqttLibNet.Packets.Handlers;
+using MqttLibNet.Utils;
 using System;
 using System.Threading.Tasks;
 
@@ -10,12 +11,15 @@ namespace MqttLibNet.Services
     {
         private readonly int timeMs;
         private readonly MqttStreamReaderWriter mqttStreamReaderWriter;
+        private readonly MqttLibNetLogger<MqttMetronomeService> logger;
         private static ulong count;
         public MqttMetronomeService(
-            MqttStreamReaderWriter mqttStreamReaderWriter)
+            MqttStreamReaderWriter mqttStreamReaderWriter,
+            MqttLibNetLogger<MqttMetronomeService> logger)
         {
             timeMs = 10000;
             this.mqttStreamReaderWriter = mqttStreamReaderWriter;
+            this.logger = logger;
         }
 
         public void OnCompleted()
@@ -30,7 +34,7 @@ namespace MqttLibNet.Services
 
         public void OnNext((byte[] Data, byte Flag) pingResp)
         {
-            Console.WriteLine($"Ping response message - {DateTime.UtcNow} - Total ping messages so far {++count}");
+            this.logger.LogDebug("Ping response message {pingTime} ping message no is {pingMessageNo}", DateTime.UtcNow, ++count);
         }
 
         public void Start()

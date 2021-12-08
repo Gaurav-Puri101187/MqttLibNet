@@ -2,6 +2,8 @@
 using MqttLibNet.Packets;
 using MqttLibNet.Packets.Data;
 using MqttLibNet.Services;
+using MqttLibNet.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,6 +20,7 @@ namespace MqttLibNet.Client
         private readonly MqttPublishQos1DispatchService mqttPublishQos1DispatchService;
         private readonly MqttSubscriptionService mqttSubscriptionService;
         private readonly MqttMetronomeService mqttMetronomeService;
+        private readonly MqttLibNetLogger<MqttClient> logger;
         private MqttClientConfiguration connectionContext = new MqttClientConfiguration();
 
         /// <summary>
@@ -36,7 +39,8 @@ namespace MqttLibNet.Client
             MqttPublishQos1ReceiverService mqttPublishQos1Service,
             MqttPublishQos1DispatchService mqttPublishQos1DispatchService,
             MqttSubscriptionService mqttSubscriptionService,
-            MqttMetronomeService mqttMetronomeService)
+            MqttMetronomeService mqttMetronomeService,
+            MqttLibNetLogger<MqttClient> logger)
         {
             this.mqttStreamReaderWriter = mqttStreamReaderWriter;
             this.mqttHandshakeService = mqttHandshakeService;
@@ -45,6 +49,7 @@ namespace MqttLibNet.Client
             this.mqttPublishQos1DispatchService = mqttPublishQos1DispatchService;
             this.mqttSubscriptionService = mqttSubscriptionService;
             this.mqttMetronomeService = mqttMetronomeService;
+            this.logger = logger;
         }
 
         /// <summary>
@@ -54,6 +59,7 @@ namespace MqttLibNet.Client
         /// <returns></returns>
         public async Task<MqttConnectResult> ConnectAsync(MqttClientConfiguration mqttClientConfiguration)
         {
+            logger.LogInformation("Connect Start {startTimeConnect}", DateTime.UtcNow);
             var connackData = await Handshake(mqttClientConfiguration);
             MqttConnectResult mqttConnectResult = new MqttConnectResult();
             if (connackData.ConnectReturnCode == ConnectReturnCode.ConnectionAccepted)
@@ -66,6 +72,7 @@ namespace MqttLibNet.Client
             }
             mqttConnectResult.ConnectReturnCode = connackData.ConnectReturnCode;
             mqttConnectResult.SessionPresent = connackData.SessionPresent;
+            logger.LogDebug("Connect Start {endTimeConnect}", DateTime.UtcNow);
             return mqttConnectResult;
         }
 
