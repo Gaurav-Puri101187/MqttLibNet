@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MqttLibNet.Client;
+using Serilog;
+using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,16 +15,25 @@ namespace SampleAppDotNetFramework
         {
             // Create a ServiceCollection 
             var container = new ServiceCollection();
+
             // Setup broker configurations
             MqttBrokerConfiguration mqttBrokerConfiguration = new MqttBrokerConfiguration();
             mqttBrokerConfiguration.Broker = "broker.emqx.io";
             mqttBrokerConfiguration.Port = 8883;
             mqttBrokerConfiguration.ReadWriteTimeoutMs = 60000;
             mqttBrokerConfiguration.SSLEnabled = true;
+
+            // Setup logging.
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter()).CreateLogger();
+            container.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
+            container.AddSingleton<ILoggerFactory>(new Serilog.Extensions.Logging.SerilogLoggerFactory(Log.Logger));
+
             // Setup MqttClient DI
             var sp = container.AddMqttClientWithTcp(mqttBrokerConfiguration).BuildServiceProvider();
+
             // Fetch the Client from SP
             var client = sp.GetService<MqttClient>();
+
             // Connect with the client.
             MqttClientConfiguration mqttClientConfiguration = new MqttClientConfiguration();
             mqttClientConfiguration.CleanSession = true;
@@ -35,12 +47,13 @@ namespace SampleAppDotNetFramework
             };
             mqttClientConfiguration.TopicConfiguration = topics;
             var res = await client.ConnectAsync(mqttClientConfiguration);
+            var logger = sp.GetService<ILogger<Program>>();
             if (res.ConnectReturnCode == MqttLibNet.Packets.ConnectReturnCode.ConnectionAccepted)
             {
-                Console.WriteLine($"Connection Successful with session {res.SessionPresent}");
+                logger.LogInformation($"Connection Successful with session {res.SessionPresent}");
                 foreach (var item in res.TopicConfiguration)
                 {
-                    Console.WriteLine($"Subs are Name:{item.Name} Level:{item.Level}");
+                    logger.LogDebug($"Subs are Name:{item.Name} Level:{item.Level}");
                 }
 
             }
