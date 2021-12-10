@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Threading;
@@ -17,10 +18,10 @@ namespace MqttLibNet.IO
         private readonly bool sslEnabled;
         private readonly int readWriteTimeoutMs;
 
-        // Tcp stream.
+        // Tcp client raw
         private Lazy<TcpClient> tcpClientInternal;
-        // SSL stream.
-        private Lazy<SslStream> sslStream;
+        // Network/SSL stream
+        private Lazy<Stream> streamInternal;
 
         public MqttTcpStream(string broker, int port, bool sslEnabled, int readWriteTimeoutMs)
         {
@@ -39,11 +40,15 @@ namespace MqttLibNet.IO
             {
                 return new TcpClient(broker, port) { ReceiveTimeout = readWriteTimeoutMs, SendTimeout = readWriteTimeoutMs };
             }, true);
-            sslStream = new Lazy<SslStream>(() =>
+            streamInternal = new Lazy<Stream>(() =>
             {
-                var ssl = new SslStream(tcpClientInternal.Value.GetStream(), false);
-                ssl.AuthenticateAsClient(broker);
-                return ssl;
+                if (sslEnabled)
+                {
+                    var ssl = new SslStream(tcpClientInternal.Value.GetStream(), false);
+                    ssl.AuthenticateAsClient(broker);
+                    return ssl;
+                }
+                else { return tcpClientInternal.Value.GetStream(); }
             }, true);
         }
 
@@ -58,13 +63,9 @@ namespace MqttLibNet.IO
         {
             await semaphoreSlimReader.WaitAsync();
             byte[] buffer = new byte[noOfBytes];
-            var bytesRead = sslEnabled ? await sslStream.Value.ReadAsync(buffer, 0, noOfBytes)
-                                       : await tcpClientInternal.Value.GetStream().ReadAsync(buffer, 0, noOfBytes);
-            if(bytesRead == 0)
-            {
-                throw new Exception("Read Timed Out!!!");
-            }
+            var bytesRead = await streamInternal.Value.ReadAsync(buffer, 0, noOfBytes);
             semaphoreSlimReader.Release();
+            if (bytesRead == 0) { throw new Exception("Read Timed Out!!!"); }
             return buffer;
         }
 
@@ -81,8 +82,12 @@ namespace MqttLibNet.IO
         /// </summary>
         public void Reset()
         {
-            tcpClientInternal.Value.Close();
-            tcpClientInternal.Value.Dispose();
+            if (streamInternal.IsValueCreated)
+            {
+                streamInternal.Value.Dispose();
+                tcpClientInternal.Value.Close();
+                tcpClientInternal.Value.Dispose();
+            }
             InitClient();
         }
 
@@ -96,22 +101,11 @@ namespace MqttLibNet.IO
         public async Task WriteAsync(byte[] buffer)
         {
             await semaphoreSlimWriter.WaitAsync();
-            if (sslEnabled) 
-            {
-#if  (NET5_0 || NETSTANDARD2_1)
-                await sslStream.Value.WriteAsync(buffer);
+#if (NET5_0 || NETSTANDARD2_1)
+            await streamInternal.Value.WriteAsync(buffer);
 #else
-                await sslStream.Value.WriteAsync(buffer,0,buffer.Length);
+            await streamInternal.Value.WriteAsync(buffer,0,buffer.Length);
 #endif
-            }
-            else
-            {
-#if  (NET5_0 || NETSTANDARD2_1)
-                await tcpClientInternal.Value.GetStream().WriteAsync(buffer);
-#else
-                await tcpClientInternal.Value.GetStream().WriteAsync(buffer,0,buffer.Length);
-#endif
-            }
             semaphoreSlimWriter.Release();
         }
     }
