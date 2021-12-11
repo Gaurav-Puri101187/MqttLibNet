@@ -24,9 +24,23 @@ namespace MqttLibNet.Utils
         /// </summary>
         /// <param name="bytes"></param>
         /// <returns></returns>
-        public static int GetMqttInt16(this byte[] bytes)
+        public static int GetMqttInt16(this byte[] bytes, int start = 0)
         {
-            return (((int)bytes[0]) << 8) | ((int)bytes[1]);
+            return (((int)bytes[start]) << 8) | ((int)bytes[start + 1]);
+        }
+
+        /// <summary>
+        /// Mqtt strings are stored in UTF8 encoded pascal string. First
+        /// 2 bytes contains the length in an int16_be.
+        /// This method expects to receive them in similar format
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        public static string GetMqttUTF8String(this byte[] bytes, int start = 0)
+        {
+            int utf8ByteCount = GetMqttInt16(bytes, start);
+
+            return System.Text.Encoding.UTF8.GetString(bytes, start + 2, utf8ByteCount);
         }
     }
 }

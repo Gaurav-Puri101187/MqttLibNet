@@ -48,14 +48,14 @@ namespace MqttLibNet.Packets.Handlers
 
             // step 2 prepare variable headers
             List<byte> variableHeaders = new List<byte>();
-            variableHeaders.AddRange(publishData.TopicName.GetMqttUTF8EncodedString());
+            variableHeaders.AddRange(publishData.TopicName.GetMqttUTF8Bytes());
             if(publishData.QosLevel > QosLevel.Qos0)
             {
                 variableHeaders.AddRange(publishData.PacketIdentifier.GetMqttInt16Bytes());
             }
 
             // step 3 prepare payload.
-            var payload = publishData.Message.GetMqttUTF8EncodedString();
+            var payload = publishData.Message.GetMqttUTF8Bytes();
 
             // step 4 add remaining length then add variable headers and then payload.
             int remainingLength = variableHeaders.Count + payload.Length;

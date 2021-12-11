@@ -21,7 +21,7 @@ namespace MqttLibNet.Packets.Handlers
             List<byte> payload = new List<byte>();
             foreach (var subscription in data.Subscriptions)
             {
-                payload.AddRange(subscription.TopicName.GetMqttUTF8EncodedString());
+                payload.AddRange(subscription.TopicName.GetMqttUTF8Bytes());
                 payload.Add((byte)subscription.Qos);
             }
 

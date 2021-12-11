@@ -14,11 +14,13 @@ namespace MqttLibNet.Utils
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
-        public static byte[] GetMqttUTF8EncodedString(this string str)
+        public static byte[] GetMqttUTF8Bytes(this string str)
         {
-            List<byte> byteString = new List<byte>(str.Length + 2);
-            byteString.AddRange(((short)str.Length).GetMqttInt16Bytes());
-            byteString.AddRange(Encoding.UTF8.GetBytes(str));
+            var utf8Bytes = Encoding.UTF8.GetBytes(str);
+            var lenInt16Bytes = ((short)utf8Bytes.Length).GetMqttInt16Bytes();
+            List<byte> byteString = new List<byte>(utf8Bytes.Length + lenInt16Bytes.Length);
+            byteString.AddRange(lenInt16Bytes);
+            byteString.AddRange(utf8Bytes);
             return byteString.ToArray();
         }
     }

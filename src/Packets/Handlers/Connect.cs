@@ -15,22 +15,22 @@ namespace MqttLibNet.Packets.Handlers
         protected override byte[] GetPayload(ConnectData connectData)
         {
             List<byte> payload = new List<byte>();
-            payload.AddRange(connectData.ClientIdentifier.GetMqttUTF8EncodedString());
+            payload.AddRange(connectData.ClientIdentifier.GetMqttUTF8Bytes());
             if (!string.IsNullOrEmpty(connectData.WillTopic))
             {
-                payload.AddRange(connectData.WillTopic.GetMqttUTF8EncodedString());
+                payload.AddRange(connectData.WillTopic.GetMqttUTF8Bytes());
             }
             if (!string.IsNullOrEmpty(connectData.WillMessage))
             {
-                payload.AddRange(connectData.WillMessage.GetMqttUTF8EncodedString());
+                payload.AddRange(connectData.WillMessage.GetMqttUTF8Bytes());
             }
             if (!string.IsNullOrEmpty(connectData.UserName))
             {
-                payload.AddRange(connectData.UserName.GetMqttUTF8EncodedString());
+                payload.AddRange(connectData.UserName.GetMqttUTF8Bytes());
             }
             if (!string.IsNullOrEmpty(connectData.Password))
             {
-                payload.AddRange(connectData.Password.GetMqttUTF8EncodedString());
+                payload.AddRange(connectData.Password.GetMqttUTF8Bytes());
             }
             return payload.ToArray();
         }
@@ -38,7 +38,7 @@ namespace MqttLibNet.Packets.Handlers
         protected override byte[] GetVariableHeaders(ConnectData connectData)
         {
             List<byte> variableHeaders = new List<byte>();
-            variableHeaders.AddRange(connectData.ProtocolName.GetMqttUTF8EncodedString());
+            variableHeaders.AddRange(connectData.ProtocolName.GetMqttUTF8Bytes());
             variableHeaders.Add((byte)connectData.ProtocolLevel);
             variableHeaders.Add(GetFlag(connectData));
             variableHeaders.AddRange(((short)(((connectData.KeepAliveMs) / 1000))).GetMqttInt16Bytes());
