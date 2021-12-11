@@ -41,7 +41,7 @@ namespace MqttLibNet.Packets.Handlers
             variableHeaders.AddRange(connectData.ProtocolName.GetMqttUTF8EncodedString());
             variableHeaders.Add((byte)connectData.ProtocolLevel);
             variableHeaders.Add(GetFlag(connectData));
-            variableHeaders.AddRange(((short)(((connectData.KeepAliveMs) / 1000))).GetMqttBigEndianInt16());
+            variableHeaders.AddRange(((short)(((connectData.KeepAliveMs) / 1000))).GetMqttInt16Bytes());
             return variableHeaders.ToArray();
         }
 

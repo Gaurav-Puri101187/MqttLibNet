@@ -15,25 +15,18 @@ namespace MqttLibNet.Utils
         /// <returns></returns>
         public static bool IsBitOn(this byte b, int bitPosition)
         {
-            var operand = (byte)Math.Pow(2, bitPosition);
-            return (b & operand) == operand;
+            return (b & (1 << bitPosition)) != 0;
         }
 
         /// <summary>
         /// Mqtt numbers are stored as MSB and then LSB 
         /// This method expects to receive them in similar format
-        /// we need to reverse and bytes before converting them to a number.
         /// </summary>
         /// <param name="bytes"></param>
         /// <returns></returns>
         public static int GetMqttInt16(this byte[] bytes)
         {
-            Array.Reverse(bytes);
-#if  (NET5_0 || NETSTANDARD2_1)
-            return BitConverter.ToInt16(bytes);
-#else
-             return BitConverter.ToInt16(bytes, 0);
-#endif
+            return (((int)bytes[0]) << 8) | ((int)bytes[1]);
         }
     }
 }

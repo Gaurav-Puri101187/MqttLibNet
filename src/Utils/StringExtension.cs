@@ -17,12 +17,7 @@ namespace MqttLibNet.Utils
         public static byte[] GetMqttUTF8EncodedString(this string str)
         {
             List<byte> byteString = new List<byte>(str.Length + 2);
-            var lengthBytes = BitConverter.GetBytes((short)str.Length);
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(lengthBytes);
-            }
-            byteString.AddRange(lengthBytes);
+            byteString.AddRange(((short)str.Length).GetMqttInt16Bytes());
             byteString.AddRange(Encoding.UTF8.GetBytes(str));
             return byteString.ToArray();
         }

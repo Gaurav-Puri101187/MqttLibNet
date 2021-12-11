@@ -26,7 +26,7 @@ namespace MqttLibNet.Packets.Handlers
 
         protected override byte[] GetVariableHeaders(PubAckData data)
         {
-            return data.PacketIdentifier.GetMqttBigEndianInt16();
+            return data.PacketIdentifier.GetMqttInt16Bytes();
         }
     }
 }

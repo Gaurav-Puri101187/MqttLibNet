@@ -6,17 +6,17 @@ namespace MqttLibNet.Utils
     public static class IntExtension
     {
         /// <summary>
-        /// MQTT supports BigEndian int so reverse in case architecture is LittleEndian.
+        /// MQTT supports BigEndian int (MSB first, then LSB)
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public static byte[] GetMqttBigEndianInt16(this short value)
+        public static byte[] GetMqttInt16Bytes(this short value)
         {
-            var bytes = BitConverter.GetBytes(value);
-            if (BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(bytes);
-            }
+            var bytes = new byte[2];
+
+            bytes[0] = (byte)(value >> 8);
+            bytes[1] = (byte)value;
+
             return bytes;
         }
 

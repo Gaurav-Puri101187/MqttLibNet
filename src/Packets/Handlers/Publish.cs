@@ -51,7 +51,7 @@ namespace MqttLibNet.Packets.Handlers
             variableHeaders.AddRange(publishData.TopicName.GetMqttUTF8EncodedString());
             if(publishData.QosLevel > QosLevel.Qos0)
             {
-                variableHeaders.AddRange(publishData.PacketIdentifier.GetMqttBigEndianInt16());
+                variableHeaders.AddRange(publishData.PacketIdentifier.GetMqttInt16Bytes());
             }
 
             // step 3 prepare payload.

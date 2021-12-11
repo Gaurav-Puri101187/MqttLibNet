@@ -13,7 +13,7 @@ namespace MqttLibNet.Packets.Handlers
 
         protected override byte[] GetVariableHeaders(SubscribeData data)
         {
-            return data.PacketIdentifier.GetMqttBigEndianInt16();
+            return data.PacketIdentifier.GetMqttInt16Bytes();
         }
 
         protected override byte[] GetPayload(SubscribeData data)
